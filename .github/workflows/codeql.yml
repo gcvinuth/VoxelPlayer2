@@ -21,16 +21,16 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@v4
         with:
           cache-provider: 'enhanced'
   
@@ -49,7 +49,9 @@ jobs:
           build-mode: manual
   
       - name: Build with Gradle
-        run: ${{ github.workspace }}/gradlew :app:assembleDebug :wear:assembleDebug --no-daemon
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug :wear:assembleDebug --no-daemon
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4

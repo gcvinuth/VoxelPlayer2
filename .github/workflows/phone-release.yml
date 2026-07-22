@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-phone:
@@ -18,20 +18,20 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Cache keystore
         id: cache-keystore
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: vz-pixelplay.jks
           key: ${{ runner.os }}-keystore-vz-pixelplay
@@ -52,7 +52,9 @@ jobs:
           echo "keyPassword=994273" >> keystore.properties
 
       - name: Build Phone release APK
-        run: gradle :app:assembleRelease -Ppixelplay.enableAbiSplits=true
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease -Ppixelplay.enableAbiSplits=true
 
       - name: Verify Phone split APKs
         run: |
@@ -66,7 +68,7 @@ jobs:
           done
 
       - name: Upload Phone split APK artifacts
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v4
         with:
           name: PixelPlay-phone-release-split-apks
           path: |
@@ -74,3 +76,17 @@ jobs:
             app/build/outputs/apk/release/app-armeabi-v7a-release.apk
           if-no-files-found: error
           compression-level: 0
+
+      - name: Publish Release APK to GitHub Releases (Direct Phone Install)
+        if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-release
+          name: PixelPlay Phone Release
+          body: |
+            Automated Phone Release build from master branch (${{ github.sha }}).
+            Directly downloadable and installable on Android devices.
+          prerelease: false
+          files: |
+            app/build/outputs/apk/release/app-arm64-v8a-release.apk
+            app/build/outputs/apk/release/app-armeabi-v7a-release.apk
